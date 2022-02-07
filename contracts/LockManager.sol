@@ -36,7 +36,7 @@ contract LockManager is Initializable {
   function initialize() public initializer {
     usdcContractAddress = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
 
-    ERC20TransferSelector = bytes4(keccak256(bytes("transferFrom(address,address,uint256")));
+    ERC20TransferSelector = bytes4(keccak256(bytes("transferFrom(address,address,uint256)")));
   }
  
   function lockAVAX(string calldata _destination) public payable returns (bool success) {
