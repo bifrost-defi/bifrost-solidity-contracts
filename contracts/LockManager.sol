@@ -25,10 +25,20 @@ contract LockManager is Initializable {
     string destination
   );
 
+  event USDCUnlocked(
+    address user,
+    uint256 amount
+  );
+
   event AVAXLocked(
     address user,
     uint256 amount,
     string destination
+  );
+
+  event AVAXUnlocked(
+    address user,
+    uint256 amount
   );
 
   // @dev initialize acts like constructor.
@@ -38,7 +48,27 @@ contract LockManager is Initializable {
 
     ERC20TransferSelector = bytes4(keccak256(bytes("transferFrom(address,address,uint256)")));
   }
- 
+
+  function lockUSDC(uint256 _amount, string calldata _destination) external returns (bool success) {
+    require(_amount > 0, "Amount must be greater than 0");
+
+    _transferERC20(usdcContractAddress, msg.sender, address(this), _amount);
+
+    emit USDCLocked(msg.sender, _amount, _destination);
+
+    return true;
+  }
+
+  function unlockUSDC(uint256 _amount) external returns (bool success) {
+    require(_amount > 0, "Amount must be greater than 0");
+
+    _transferERC20(usdcContractAddress, address(this), msg.sender, _amount);
+
+    emit USDCUnlocked(msg.sender, _amount);
+
+    return true;
+  }
+
   function lockAVAX(string calldata _destination) public payable returns (bool success) {
     require(msg.value > 0, "Value must be greater than 0");
 
@@ -49,12 +79,13 @@ contract LockManager is Initializable {
      return true;
   }
 
-  function lockUSDC(uint256 _amount, string calldata _destination) external returns (bool success) {
-    require(_amount > 0, "Amount must be greater than 0");
+  function unlockAVAX(uint256 _amount) public returns (bool success) {
+    require(locked[msg.sender] >= _amount, "Insufficient funds");
 
-    _transferERC20(usdcContractAddress, msg.sender, address(this), _amount);
+    locked[msg.sender] -= _amount;
+    payable(msg.sender).transfer(_amount);
 
-    emit USDCLocked(msg.sender, _amount, _destination);
+    emit AVAXUnlocked(msg.sender, _amount);
 
     return true;
   }
