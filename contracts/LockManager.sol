@@ -6,95 +6,103 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract LockManager is Initializable {
-  // @dev Orders of variables must not be changed!
-  // Only additions to the end allowed. 
-  // See https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies
-  address internal usdcContractAddress;
+    // @dev Orders of variables must not be changed!
+    // Only additions to the end allowed.
+    // See https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies
+    address internal usdcContractAddress;
 
-  bytes4 private ERC20TransferSelector;
+    bytes4 private ERC20TransferSelector;
 
-  mapping(address => uint256) locked; 
-  mapping (string => bool) operations;
-  
-  using SafeMathUpgradeable for uint256;
-  using ECDSAUpgradeable for bytes32;
+    mapping(address => uint256) locked;
+    mapping(string => bool) operations;
 
-  event USDCLocked(
-    address user,
-    uint256 amount,
-    string destination
-  );
+    using SafeMathUpgradeable for uint256;
+    using ECDSAUpgradeable for bytes32;
 
-  event USDCUnlocked(
-    address user,
-    uint256 amount
-  );
+    event USDCLocked(address user, uint256 amount, string destination);
 
-  event AVAXLocked(
-    address user,
-    uint256 amount,
-    string destination
-  );
+    event USDCUnlocked(address user, uint256 amount);
 
-  event AVAXUnlocked(
-    address user,
-    uint256 amount
-  );
+    event AVAXLocked(address user, uint256 amount, string destination);
 
-  // @dev initialize acts like constructor.
-  // This function can only be called once. 
-  function initialize() public initializer {
-    usdcContractAddress = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
+    event AVAXUnlocked(address user, uint256 amount);
 
-    ERC20TransferSelector = bytes4(keccak256(bytes("transferFrom(address,address,uint256)")));
-  }
+    // @dev initialize acts like constructor.
+    // This function can only be called once.
+    function initialize(address usdcContract) public initializer {
+        usdcContractAddress = usdcContract;
 
-  function lockUSDC(uint256 _amount, string calldata _destination) external returns (bool success) {
-    require(_amount > 0, "Amount must be greater than 0");
+        ERC20TransferSelector = bytes4(
+            keccak256(bytes("transferFrom(address,address,uint256)"))
+        );
+    }
 
-    _transferERC20(usdcContractAddress, msg.sender, address(this), _amount);
+    function lockUSDC(uint256 _amount, string calldata _destination)
+        external
+        returns (bool success)
+    {
+        require(_amount > 0, "Amount must be greater than 0");
 
-    emit USDCLocked(msg.sender, _amount, _destination);
+        _transferERC20(usdcContractAddress, msg.sender, address(this), _amount);
 
-    return true;
-  }
+        emit USDCLocked(msg.sender, _amount, _destination);
 
-  function unlockUSDC(uint256 _amount) external returns (bool success) {
-    require(_amount > 0, "Amount must be greater than 0");
+        return true;
+    }
 
-    _transferERC20(usdcContractAddress, address(this), msg.sender, _amount);
+    function unlockUSDC(uint256 _amount) external returns (bool success) {
+        require(_amount > 0, "Amount must be greater than 0");
 
-    emit USDCUnlocked(msg.sender, _amount);
+        _transferERC20(usdcContractAddress, address(this), msg.sender, _amount);
 
-    return true;
-  }
+        emit USDCUnlocked(msg.sender, _amount);
 
-  function lockAVAX(string calldata _destination) public payable returns (bool success) {
-    require(msg.value > 0, "Value must be greater than 0");
+        return true;
+    }
 
-    locked[msg.sender] = msg.value;
+    function lockAVAX(string calldata _destination)
+        public
+        payable
+        returns (bool success)
+    {
+        require(msg.value > 0, "Value must be greater than 0");
 
-     emit AVAXLocked(msg.sender, msg.value, _destination);
+        locked[msg.sender] = msg.value;
 
-     return true;
-  }
+        emit AVAXLocked(msg.sender, msg.value, _destination);
 
-  function unlockAVAX(uint256 _amount) public returns (bool success) {
-    require(locked[msg.sender] >= _amount, "Insufficient funds");
+        return true;
+    }
 
-    locked[msg.sender] -= _amount;
-    payable(msg.sender).transfer(_amount);
+    function unlockAVAX(uint256 _amount) public returns (bool success) {
+        require(locked[msg.sender] >= _amount, "Insufficient funds");
 
-    emit AVAXUnlocked(msg.sender, _amount);
+        locked[msg.sender] -= _amount;
+        payable(msg.sender).transfer(_amount);
 
-    return true;
-  }
+        emit AVAXUnlocked(msg.sender, _amount);
 
-  function _transferERC20(address _token, address _from, address _to, uint256 _amount) private {
-    bytes memory fn = abi.encodeWithSelector(ERC20TransferSelector, _from, _to, _amount);
+        return true;
+    }
 
-    (bool success, bytes memory data) = _token.call(fn);
+    function _transferERC20(
+        address _token,
+        address _from,
+        address _to,
+        uint256 _amount
+    ) private {
+        bytes memory fn = abi.encodeWithSelector(
+            ERC20TransferSelector,
+            _from,
+            _to,
+            _amount
+        );
 
-    require(success && (data.length == 0 || abi.decode(data, (bool))), "Transfer failed");
-  }
+        (bool success, bytes memory data) = _token.call(fn);
+
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))),
+            "Transfer failed"
+        );
+    }
 }
