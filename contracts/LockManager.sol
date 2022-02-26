@@ -50,10 +50,13 @@ contract LockManager is Initializable {
         return true;
     }
 
-    function unlockUSDC(uint256 _amount) external returns (bool success) {
+    function unlockUSDC(address _user, uint256 _amount)
+        external
+        returns (bool success)
+    {
         require(_amount > 0, "Amount must be greater than 0");
 
-        _transferERC20(usdcContractAddress, address(this), msg.sender, _amount);
+        _transferERC20(usdcContractAddress, address(this), _user, _amount);
 
         emit USDCUnlocked(msg.sender, _amount);
 
@@ -74,13 +77,16 @@ contract LockManager is Initializable {
         return true;
     }
 
-    function unlockAVAX(uint256 _amount) public returns (bool success) {
+    function unlockAVAX(address _user, uint256 _amount)
+        public
+        returns (bool success)
+    {
         require(locked[msg.sender] >= _amount, "Insufficient funds");
 
-        locked[msg.sender] -= _amount;
-        payable(msg.sender).transfer(_amount);
+        locked[_user] -= _amount;
+        payable(_user).transfer(_amount);
 
-        emit AVAXUnlocked(msg.sender, _amount);
+        emit AVAXUnlocked(_user, _amount);
 
         return true;
     }
