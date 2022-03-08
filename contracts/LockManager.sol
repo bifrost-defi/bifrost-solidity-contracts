@@ -4,8 +4,9 @@ pragma solidity >=0.4.22 <0.9.0;
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract LockManager is Initializable {
+contract LockManager is Initializable, OwnableUpgradeable {
     // @dev Orders of variables must not be changed!
     // Only additions to the end allowed.
     // See https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies
@@ -28,6 +29,8 @@ contract LockManager is Initializable {
     // @dev initialize acts like constructor.
     // This function can only be called once.
     function initialize(address usdcContract) public initializer {
+        __Ownable_init();
+
         usdcContractAddress = usdcContract;
 
         ERC20TransferSelector = bytes4(
@@ -50,6 +53,7 @@ contract LockManager is Initializable {
 
     function unlockUSDC(address _user, uint256 _amount)
         external
+        onlyOwner
         returns (bool success)
     {
         require(_amount > 0, "Amount must be greater than 0");
@@ -62,7 +66,7 @@ contract LockManager is Initializable {
     }
 
     function lockAVAX(string calldata _destination)
-        public
+        external
         payable
         returns (bool success)
     {
@@ -76,7 +80,8 @@ contract LockManager is Initializable {
     }
 
     function unlockAVAX(address _user, uint256 _amount)
-        public
+        external
+        onlyOwner
         returns (bool success)
     {
         require(poolBalance >= _amount, "Insufficient funds");
