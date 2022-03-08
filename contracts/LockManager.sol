@@ -13,11 +13,9 @@ contract LockManager is Initializable {
 
     bytes4 private ERC20TransferSelector;
 
-    mapping(address => uint256) locked;
-    mapping(string => bool) operations;
+    uint256 internal poolBalance;
 
     using SafeMathUpgradeable for uint256;
-    using ECDSAUpgradeable for bytes32;
 
     event USDCLocked(address user, uint256 amount, string destination);
 
@@ -70,7 +68,7 @@ contract LockManager is Initializable {
     {
         require(msg.value > 0, "Value must be greater than 0");
 
-        locked[msg.sender] = msg.value;
+        poolBalance += msg.value;
 
         emit AVAXLocked(msg.sender, msg.value, _destination);
 
@@ -81,9 +79,9 @@ contract LockManager is Initializable {
         public
         returns (bool success)
     {
-        require(locked[msg.sender] >= _amount, "Insufficient funds");
+        require(poolBalance >= _amount, "Insufficient funds");
 
-        locked[_user] -= _amount;
+        poolBalance -= _amount;
         payable(_user).transfer(_amount);
 
         emit AVAXUnlocked(_user, _amount);
