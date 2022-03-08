@@ -14,8 +14,6 @@ contract LockManager is Initializable, OwnableUpgradeable {
 
     bytes4 private ERC20TransferSelector;
 
-    uint256 internal poolBalance;
-
     using SafeMathUpgradeable for uint256;
 
     event USDCLocked(address user, uint256 amount, string destination);
@@ -72,22 +70,21 @@ contract LockManager is Initializable, OwnableUpgradeable {
     {
         require(msg.value > 0, "Value must be greater than 0");
 
-        poolBalance += msg.value;
-
         emit AVAXLocked(msg.sender, msg.value, _destination);
 
         return true;
     }
 
-    function unlockAVAX(address _user, uint256 _amount)
+    function unlockAVAX(address payable _user, uint256 _amount)
         external
+        payable
         onlyOwner
         returns (bool success)
     {
-        require(poolBalance >= _amount, "Insufficient funds");
+        require(address(this).balance >= _amount, "Insufficient funds");
 
-        poolBalance -= _amount;
-        payable(_user).transfer(_amount);
+        (bool sent, ) = _user.call{value: _amount}("");
+        require(sent, "Failed to send AVAX");
 
         emit AVAXUnlocked(_user, _amount);
 
