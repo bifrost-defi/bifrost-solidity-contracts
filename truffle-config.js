@@ -2,24 +2,34 @@ const HDWalletProvider = require("@truffle/hdwallet-provider");
 
 require("dotenv").config();
 
-const localPort = 26171;
+const localPort = 13457;
 const localURL = `http://127.0.0.1:${localPort}/ext/bc/C/rpc`;
 
-let mnemonic = process.env.PRIVATE_KEY;
+let privateKey = process.env.PRIVATE_KEY;
 
 module.exports = {
   networks: {
     development: {
       provider: () => {
-        return new HDWalletProvider(mnemonic, localURL);
+        return new HDWalletProvider({
+          privateKeys: [privateKey],
+          providerOrUrl: localURL,
+        });
       },
       network_id: "*",
       gas: 3000000,
       gasPrice: 225000000000,
     },
     testnet: {
-      host: "api.avax-test.network/ext/bc/C/rpc",
+      provider: () => {
+        return new HDWalletProvider({
+          privateKeys: [privateKey],
+          providerOrUrl: "https://api.avax-test.network/ext/bc/C/rpc",
+        });
+      },
       network_id: "*",
+      gas: 3000000,
+      gasPrice: 225000000000,
     },
   },
 
