@@ -18,13 +18,14 @@ contract WrappingBridge is Ownable {
         string destAddress,
         int256 destChain
     );
+    event Unlock(address indexed to, uint256 value);
+
     event LockERC20(
         address indexed token,
         address indexed from,
         uint256 value,
         string destAddress
     );
-    event Unlock(address indexed to, uint256 value);
     event UnlockERC20(address indexed token, address indexed to, uint256 value);
 
     modifier onlyOracle() {
@@ -52,7 +53,7 @@ contract WrappingBridge is Ownable {
         return true;
     }
 
-    function lock(
+    function lockERC20(
         address _token,
         uint256 _amount,
         string calldata _destAddress
@@ -82,7 +83,7 @@ contract WrappingBridge is Ownable {
         return true;
     }
 
-    function unlock(
+    function unlockERC20(
         address _token,
         address _to,
         uint256 _amount
