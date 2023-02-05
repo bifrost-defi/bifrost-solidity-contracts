@@ -1,15 +1,15 @@
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { WrappingBridge } from "../typechain-types";
+import { Bridge } from "../typechain-types";
 
 describe("WrappingBridge", () => {
-  let Bridge: WrappingBridge;
+  let Bridge: Bridge;
   let accounts: SignerWithAddress[];
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
-    const factory = await ethers.getContractFactory("WrappingBridge");
+    const factory = await ethers.getContractFactory("Bridge");
     Bridge = await factory.deploy([accounts[0].address]);
 
     await Bridge.deployed();

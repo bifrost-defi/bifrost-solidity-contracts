@@ -4,13 +4,14 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract WrappingBridge is Ownable {
+contract Bridge is Ownable {
     using SafeMath for uint256;
 
     bytes4 private ERC20TransferSelector;
 
     address[] private oracles;
     mapping(address => bool) private isOracle;
+    mapping(uint32 => address) private tokens;
 
     event Lock(
         address indexed from,
