@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { Bridge } from "../typechain-types";
 import { computeContractAddress } from "./utils";
 
-describe("WrappingBridge", () => {
+describe("WrappedSwap", () => {
   let Bridge: Bridge;
   let accounts: SignerWithAddress[];
   let oracle: SignerWithAddress;
@@ -24,9 +24,8 @@ describe("WrappingBridge", () => {
   it("should lock eth and emit event", async () => {
     const value = 10;
     const destAddress = accounts[1].address;
-    const destChain = 1;
 
-    const tx = await Bridge.lock(destAddress, destChain, { value });
+    const tx = await Bridge.lock(destAddress, testCoinId, { value });
     const receipt = await tx.wait();
 
     const event = receipt.events?.[0];
@@ -35,7 +34,7 @@ describe("WrappingBridge", () => {
     expect(event?.args?.from).to.equal(accounts[0].address);
     expect(event?.args?.value).to.equal(value);
     expect(event?.args?.destAddress).to.equal(destAddress);
-    expect(event?.args?.destChain).to.equal(destChain);
+    expect(event?.args?.destCoinId).to.equal(testCoinId);
   });
 
   it("should unlock eth and emit event", async () => {
@@ -86,7 +85,7 @@ describe("WrappingBridge", () => {
 
   it("should mint tokens and emit event", async () => {
     const value = 10;
-    const destAddress = accounts[1].address;
+    const destAddress = accounts[0].address;
 
     const tx = await Bridge.mintERC20(testCoinId, destAddress, value);
     const receipt = await tx.wait();
@@ -102,5 +101,26 @@ describe("WrappingBridge", () => {
     const balance = await token.balanceOf(destAddress);
 
     expect(balance).to.equal(value);
+  });
+
+  it("should burn tokens and emit event", async () => {
+    const value = 5;
+    const destAddress = accounts[0].address;
+
+    const tx = await Bridge.burnERC20(testCoinId, destAddress, value);
+    const receipt = await tx.wait();
+
+    const event = receipt.events?.find((e) => e.event === "BurnERC20");
+
+    expect(event?.event).to.equal("BurnERC20");
+    expect(event?.args?.from).to.equal(accounts[0].address);
+    expect(event?.args?.value).to.equal(value);
+    expect(event?.args?.destCoinId).to.equal(testCoinId);
+    expect(event?.args?.destAddress).to.equal(destAddress);
+
+    const token = await ethers.getContractAt("Token", tokenAddress);
+    const balance = await token.balanceOf(destAddress);
+
+    expect(balance).to.equal(5);
   });
 });

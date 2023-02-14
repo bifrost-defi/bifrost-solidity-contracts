@@ -4,11 +4,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Token.sol";
+import "./interfaces/IBridgeToken.sol";
 
 contract Bridge is Ownable {
     using SafeMath for uint256;
-
-    bytes4 private ERC20MintSelector;
 
     address[] private oracles;
     mapping(address => bool) private isOracle;
@@ -17,15 +16,15 @@ contract Bridge is Ownable {
     event Lock(
         address indexed from,
         uint256 value,
-        string destAddress,
-        int256 destChain
+        uint32 destCoinId,
+        string destAddress
     );
     event Unlock(address indexed to, uint256 value);
 
     event BurnERC20(
-        address indexed token,
         address indexed from,
         uint256 value,
+        uint32 destCoinId,
         string destAddress
     );
     event MintERC20(uint32 coinId, address indexed to, uint256 value);
@@ -39,13 +38,11 @@ contract Bridge is Ownable {
 
     constructor(address[] memory _oracles) {
         _updateOracles(_oracles);
-
-        ERC20MintSelector = bytes4(keccak256(bytes("mint(address,uint256)")));
     }
 
     function createToken(
-        string memory _name,
-        string memory _symbol,
+        string calldata _name,
+        string calldata _symbol,
         uint32 _coinId
     ) external onlyOwner returns (bool success) {
         require(tokens[_coinId] == address(0), "Token already exists");
@@ -58,14 +55,14 @@ contract Bridge is Ownable {
         return true;
     }
 
-    function lock(string calldata _destAddress, int256 _destChain)
+    function lock(string calldata _destAddress, uint32 _destCoinId)
         external
         payable
         returns (bool success)
     {
         require(msg.value > 0, "Value must be greater than 0");
 
-        emit Lock(msg.sender, msg.value, _destAddress, _destChain);
+        emit Lock(msg.sender, msg.value, _destCoinId, _destAddress);
 
         return true;
     }
@@ -87,37 +84,32 @@ contract Bridge is Ownable {
     }
 
     function mintERC20(
-        uint32 _coinId,
+        uint32 _destCoinId,
         address _to,
         uint256 _amount
     ) external onlyOracle returns (bool success) {
         require(_amount > 0, "Amount must be greater than 0");
-        require(tokens[_coinId] != address(0), "Token does not exist");
+        require(tokens[_destCoinId] != address(0), "Token does not exist");
 
-        _mintERC20(tokens[_coinId], _to, _amount);
+        IBridgeToken(tokens[_destCoinId]).mint(_to, _amount);
 
-        emit MintERC20(_coinId, _to, _amount);
+        emit MintERC20(_destCoinId, _to, _amount);
 
         return true;
     }
 
-    function _mintERC20(
-        address _token,
-        address _to,
+    function burnERC20(
+        uint32 _destCoinId,
+        string calldata _destAddress,
         uint256 _amount
-    ) private {
-        bytes memory fn = abi.encodeWithSelector(
-            ERC20MintSelector,
-            _to,
-            _amount
-        );
+    ) external onlyOracle returns (bool success) {
+        require(_amount > 0, "Amount must be greater than 0");
 
-        (bool success, bytes memory data) = _token.call(fn);
+        IBridgeToken(tokens[_destCoinId]).burn(msg.sender, _amount);
 
-        require(
-            success && (data.length == 0 || abi.decode(data, (bool))),
-            "Mint failed"
-        );
+        emit BurnERC20(msg.sender, _amount, _destCoinId, _destAddress);
+
+        return true;
     }
 
     function _updateOracles(address[] memory _newOracles) private {
