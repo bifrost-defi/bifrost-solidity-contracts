@@ -59,6 +59,15 @@ describe("WrappedSwap", () => {
     expect(event?.args?.value).to.equal(value);
   });
 
+  it("should fail to unlock eth if caller is not an oracle", async () => {
+    const value = 10;
+    const destAddress = accounts[1].address;
+
+    const tx = Bridge.connect(accounts[1]).unlock(destAddress, value);
+
+    await expect(tx).to.be.revertedWith("Caller is not an oracle");
+  });
+
   it("should create a new bridge token", async () => {
     const name = "Bridge Token";
     const symbol = "BRG";
@@ -103,6 +112,19 @@ describe("WrappedSwap", () => {
     expect(balance).to.equal(value);
   });
 
+  it("should fail to mint tokens if minter is not an oracle", async () => {
+    const value = 10;
+    const toAddress = accounts[0].address;
+
+    const tx = Bridge.connect(accounts[1]).mintERC20(
+      testCoinId,
+      toAddress,
+      value
+    );
+
+    await expect(tx).to.be.revertedWith("Caller is not an oracle");
+  });
+
   it("should burn tokens and emit event", async () => {
     const value = 5;
     const destAddress = accounts[1].address;
@@ -122,5 +144,14 @@ describe("WrappedSwap", () => {
     const balance = await token.balanceOf(accounts[0].address);
 
     expect(balance).to.equal(5);
+  });
+
+  it("should fail to burn tokens if not enough balance", async () => {
+    const value = 10;
+    const destAddress = accounts[1].address;
+
+    await expect(
+      Bridge.burnERC20(testCoinId, destAddress, value)
+    ).to.be.revertedWith("ERC20: burn amount exceeds balance");
   });
 });
