@@ -85,27 +85,27 @@ describe("WrappedSwap", () => {
 
   it("should mint tokens and emit event", async () => {
     const value = 10;
-    const destAddress = accounts[0].address;
+    const toAddress = accounts[0].address;
 
-    const tx = await Bridge.mintERC20(testCoinId, destAddress, value);
+    const tx = await Bridge.mintERC20(testCoinId, toAddress, value);
     const receipt = await tx.wait();
 
     const event = receipt.events?.find((e) => e.event === "MintERC20");
 
     expect(event?.event).to.equal("MintERC20");
     expect(event?.args?.coinId).to.equal(testCoinId);
-    expect(event?.args?.to).to.equal(destAddress);
+    expect(event?.args?.to).to.equal(toAddress);
     expect(event?.args?.value).to.equal(value);
 
     const token = await ethers.getContractAt("Token", tokenAddress);
-    const balance = await token.balanceOf(destAddress);
+    const balance = await token.balanceOf(accounts[0].address);
 
     expect(balance).to.equal(value);
   });
 
   it("should burn tokens and emit event", async () => {
     const value = 5;
-    const destAddress = accounts[0].address;
+    const destAddress = accounts[1].address;
 
     const tx = await Bridge.burnERC20(testCoinId, destAddress, value);
     const receipt = await tx.wait();
@@ -119,7 +119,7 @@ describe("WrappedSwap", () => {
     expect(event?.args?.destAddress).to.equal(destAddress);
 
     const token = await ethers.getContractAt("Token", tokenAddress);
-    const balance = await token.balanceOf(destAddress);
+    const balance = await token.balanceOf(accounts[0].address);
 
     expect(balance).to.equal(5);
   });
