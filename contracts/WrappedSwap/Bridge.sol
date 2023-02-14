@@ -30,7 +30,7 @@ contract Bridge is Ownable {
     );
     event MintERC20(uint32 coinId, address indexed to, uint256 value);
 
-    event TokenCreated(uint32 id, address tokenAddress);
+    event TokenCreated(uint32 coinId, address tokenAddress);
 
     modifier onlyOracle() {
         require(isOracle[msg.sender], "Caller is not an oracle");

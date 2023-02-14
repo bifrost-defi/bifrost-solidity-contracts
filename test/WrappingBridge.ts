@@ -2,15 +2,21 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { Bridge } from "../typechain-types";
+import { computeContractAddress } from "./utils";
 
 describe("WrappingBridge", () => {
   let Bridge: Bridge;
   let accounts: SignerWithAddress[];
+  let oracle: SignerWithAddress;
+  let tokenAddress: string;
 
-  beforeEach(async () => {
+  let testCoinId = 111;
+
+  before(async () => {
     accounts = await ethers.getSigners();
+    oracle = accounts[0];
     const factory = await ethers.getContractFactory("Bridge");
-    Bridge = await factory.deploy([accounts[0].address]);
+    Bridge = await factory.deploy([oracle.address]);
 
     await Bridge.deployed();
   });
@@ -52,5 +58,49 @@ describe("WrappingBridge", () => {
     expect(event?.event).to.equal("Unlock");
     expect(event?.args?.to).to.equal(destAddress);
     expect(event?.args?.value).to.equal(value);
+  });
+
+  it("should create a new bridge token", async () => {
+    const name = "Bridge Token";
+    const symbol = "BRG";
+
+    const bridgeNonce = await Bridge.provider.getTransactionCount(
+      Bridge.address
+    );
+    const calculatedAddress = computeContractAddress(
+      Bridge.address,
+      bridgeNonce
+    );
+
+    const tx = await Bridge.createToken(name, symbol, testCoinId);
+    const receipt = await tx.wait();
+
+    const event = receipt.events?.find((e) => e.event === "TokenCreated");
+
+    expect(event?.event).to.equal("TokenCreated");
+    expect(event?.args?.coinId).to.equal(testCoinId);
+    expect(event?.args?.tokenAddress).to.equal(calculatedAddress);
+
+    tokenAddress = calculatedAddress;
+  });
+
+  it("should mint tokens and emit event", async () => {
+    const value = 10;
+    const destAddress = accounts[1].address;
+
+    const tx = await Bridge.mintERC20(testCoinId, destAddress, value);
+    const receipt = await tx.wait();
+
+    const event = receipt.events?.find((e) => e.event === "MintERC20");
+
+    expect(event?.event).to.equal("MintERC20");
+    expect(event?.args?.coinId).to.equal(testCoinId);
+    expect(event?.args?.to).to.equal(destAddress);
+    expect(event?.args?.value).to.equal(value);
+
+    const token = await ethers.getContractAt("Token", tokenAddress);
+    const balance = await token.balanceOf(destAddress);
+
+    expect(balance).to.equal(value);
   });
 });
