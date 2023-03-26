@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { Bridge } from "../typechain-types";
 import { computeContractAddress } from "./utils";
 
-describe("WrappedSwap", () => {
+describe("SyntheticSwap", () => {
   let Bridge: Bridge;
   let accounts: SignerWithAddress[];
   let oracle: SignerWithAddress;

@@ -55,11 +55,10 @@ contract Bridge is Ownable {
         return true;
     }
 
-    function lock(string calldata _destAddress, uint32 _destCoinId)
-        external
-        payable
-        returns (bool success)
-    {
+    function lock(
+        string calldata _destAddress,
+        uint32 _destCoinId
+    ) external payable returns (bool success) {
         require(msg.value > 0, "Value must be greater than 0");
 
         emit Lock(msg.sender, msg.value, _destCoinId, _destAddress);
@@ -67,11 +66,10 @@ contract Bridge is Ownable {
         return true;
     }
 
-    function unlock(address payable _to, uint256 _amount)
-        external
-        onlyOracle
-        returns (bool success)
-    {
+    function unlock(
+        address payable _to,
+        uint256 _amount
+    ) external onlyOracle returns (bool success) {
         require(_amount > 0, "Amount must be greater than 0");
 
         (bool sent, ) = _to.call{value: _amount}("");
@@ -102,7 +100,7 @@ contract Bridge is Ownable {
         uint32 _destCoinId,
         string calldata _destAddress,
         uint256 _amount
-    ) external onlyOracle returns (bool success) {
+    ) external returns (bool success) {
         require(_amount > 0, "Amount must be greater than 0");
 
         IBridgeToken(tokens[_destCoinId]).burn(msg.sender, _amount);
