@@ -6,5 +6,5 @@ The Bifrost bridge allows you to swap assets across blockchains. In the first it
 
 ## Contracts for other networks:
 
-- [TON](https://github.com/bifrost-defi/bifrost-ton-contracts)
-- [Tezos](https://github.com/bifrost-defi/bifrost-tzs-contracts)
+- [TON](https://github.com/synswap-labs/ton-contracts)
+- [Tezos](https://github.com/synswap-labs/tzs-contracts)
